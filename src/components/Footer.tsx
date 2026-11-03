@@ -2,8 +2,7 @@ import React from 'react';
 import { VygrahaLogo } from './VygrahaLogo';
 import { BRAND_INFO, SERVICES_DATA } from '../data/siteData';
 import { PageId } from './Navbar';
-import { ArrowUp, Download } from 'lucide-react';
-import { getAssetUrl } from '../utils/assets';
+import { ArrowUp } from 'lucide-react';
 
 interface FooterProps {
   onNavigate: (page: PageId) => void;
@@ -132,24 +131,13 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             &copy; {new Date().getFullYear()} Vygraha Interiors &amp; Constructions. All rights reserved.
           </div>
           
-          <div className="flex items-center gap-4">
-            <a
-              href={getAssetUrl('portfolio-update.zip')}
-              download="portfolio-update.zip"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-neutral-100 hover:bg-[#E5A93C] hover:text-neutral-950 text-neutral-800 rounded-lg text-xs font-semibold border border-neutral-300 transition-colors"
-            >
-              <Download className="w-3.5 h-3.5 text-[#D4952B]" />
-              <span>Download Git Package (.zip)</span>
-            </a>
-
-            <button
-              onClick={scrollToTop}
-              className="flex items-center gap-1.5 text-neutral-600 hover:text-neutral-900 text-xs font-medium"
-            >
-              <span>Back to top</span>
-              <ArrowUp className="w-3.5 h-3.5" />
-            </button>
-          </div>
+          <button
+            onClick={scrollToTop}
+            className="flex items-center gap-1.5 text-neutral-600 hover:text-neutral-900 text-xs font-medium"
+          >
+            <span>Back to top</span>
+            <ArrowUp className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
     </footer>
