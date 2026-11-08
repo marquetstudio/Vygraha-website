@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { FEATURED_PROJECTS } from '../data/siteData';
 import { ProjectCategory } from '../types';
 import { PageId } from '../components/Navbar';
-import { ArrowRight, MapPin, Tag } from 'lucide-react';
+import { ArrowRight, MapPin, Tag, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getAssetUrl } from '../utils/assets';
 
 interface PortfolioPageProps {
@@ -11,6 +11,25 @@ interface PortfolioPageProps {
 
 export const PortfolioPage: React.FC<PortfolioPageProps> = ({ onNavigate }) => {
   const [activeFilter, setActiveFilter] = useState<ProjectCategory>('all');
+  const [lightbox, setLightbox] = useState<{ images: string[]; index: number } | null>(null);
+
+  const openLightbox = useCallback((images: string[], index: number) => {
+    setLightbox({ images, index });
+  }, []);
+
+  const closeLightbox = useCallback(() => {
+    setLightbox(null);
+  }, []);
+
+  const prevImage = useCallback(() => {
+    if (!lightbox) return;
+    setLightbox((lb) => lb && { ...lb, index: (lb.index - 1 + lb.images.length) % lb.images.length });
+  }, [lightbox]);
+
+  const nextImage = useCallback(() => {
+    if (!lightbox) return;
+    setLightbox((lb) => lb && { ...lb, index: (lb.index + 1) % lb.images.length });
+  }, [lightbox]);
 
   const filterTabs: { id: ProjectCategory; label: string; count: number }[] = [
     { id: 'all', label: 'All Projects', count: FEATURED_PROJECTS.length },
@@ -37,6 +56,7 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({ onNavigate }) => {
   });
 
   return (
+    <>
     <div className="space-y-16 pb-20 pt-6">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
         
@@ -128,27 +148,58 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({ onNavigate }) => {
               key={project.id}
               className="bg-white rounded-2xl border border-neutral-200 overflow-hidden shadow-sm flex flex-col justify-between hover:border-neutral-300 transition-colors group"
             >
-              {/* High-Resolution Project Photography */}
-              <div className="relative aspect-[16/10] bg-neutral-100 overflow-hidden">
-                <img
-                  src={project.completedImage}
-                  alt={project.title}
-                  referrerPolicy="no-referrer"
-                  className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-500"
-                />
+              {/* Project Gallery */}
+              {(() => {
+                const allImages = [project.completedImage, ...(project.additionalImages || [])];
+                const hasMultiple = allImages.length > 1;
+                return (
+                  <div className="relative bg-neutral-100 overflow-hidden">
+                    {/* Scrollable gallery strip */}
+                    <div
+                      className="flex gap-2 overflow-x-auto snap-x snap-mandatory p-2"
+                      style={{ scrollbarWidth: 'none' }}
+                    >
+                      {allImages.map((imgSrc, idx) => (
+                        <div
+                          key={idx}
+                          className={`snap-center shrink-0 cursor-pointer overflow-hidden rounded-lg aspect-[16/10] ${
+                            hasMultiple ? 'w-[88%]' : 'w-full'
+                          }`}
+                          onClick={() => openLightbox(allImages, idx)}
+                        >
+                          <img
+                            src={imgSrc}
+                            alt={`${project.title} – photo ${idx + 1}`}
+                            referrerPolicy="no-referrer"
+                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                          />
+                        </div>
+                      ))}
+                    </div>
 
-                {/* Category Badge */}
-                <div className="absolute top-3.5 left-3.5 bg-neutral-900/85 backdrop-blur-xs text-white text-xs font-medium px-2.5 py-1 rounded-md flex items-center gap-1.5 shadow-xs">
-                  <Tag className="w-3 h-3 text-[#E5A93C]" />
-                  <span>{project.categoryLabel || 'Commercial Interiors'}</span>
-                </div>
+                    {/* Category Badge */}
+                    <div className="absolute top-3.5 left-3.5 bg-neutral-900/85 backdrop-blur-xs text-white text-xs font-medium px-2.5 py-1 rounded-md flex items-center gap-1.5 shadow-xs">
+                      <Tag className="w-3 h-3 text-[#E5A93C]" />
+                      <span>{project.categoryLabel || 'Commercial Interiors'}</span>
+                    </div>
 
-                {/* Location Badge */}
-                <div className="absolute top-3.5 right-3.5 bg-neutral-900/85 backdrop-blur-xs text-white text-xs font-medium px-2.5 py-1 rounded-md flex items-center gap-1 shadow-xs">
-                  <MapPin className="w-3 h-3 text-[#E5A93C]" />
-                  <span>{project.location}</span>
-                </div>
-              </div>
+                    {/* Location Badge */}
+                    <div className="absolute top-3.5 right-3.5 bg-neutral-900/85 backdrop-blur-xs text-white text-xs font-medium px-2.5 py-1 rounded-md flex items-center gap-1 shadow-xs">
+                      <MapPin className="w-3 h-3 text-[#E5A93C]" />
+                      <span>{project.location}</span>
+                    </div>
+
+                    {/* Scroll indicator dots */}
+                    {hasMultiple && (
+                      <div className="absolute bottom-3.5 left-1/2 -translate-x-1/2 flex gap-1.5">
+                        {allImages.map((_, idx) => (
+                          <span key={idx} className="w-1.5 h-1.5 rounded-full bg-white/70 shadow-sm" />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* Project Details */}
               <div className="p-6 sm:p-7 space-y-4 flex-1 flex flex-col justify-between">
@@ -229,5 +280,71 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({ onNavigate }) => {
 
       </div>
     </div>
+
+      {/* Lightbox Modal */}
+      {lightbox && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm"
+          onClick={closeLightbox}
+        >
+          {/* Close button */}
+          <button
+            className="absolute top-4 right-4 text-white bg-white/10 hover:bg-white/20 rounded-full p-2 transition-colors z-10"
+            onClick={closeLightbox}
+            aria-label="Close"
+          >
+            <X className="w-6 h-6" />
+          </button>
+
+          {/* Prev button */}
+          {lightbox.images.length > 1 && (
+            <button
+              className="absolute left-4 text-white bg-white/10 hover:bg-white/20 rounded-full p-2 transition-colors z-10"
+              onClick={(e) => { e.stopPropagation(); prevImage(); }}
+              aria-label="Previous"
+            >
+              <ChevronLeft className="w-7 h-7" />
+            </button>
+          )}
+
+          {/* Image */}
+          <div
+            className="max-w-5xl max-h-[90vh] w-full mx-16 flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={lightbox.images[lightbox.index]}
+              alt={`Photo ${lightbox.index + 1}`}
+              referrerPolicy="no-referrer"
+              className="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl"
+            />
+          </div>
+
+          {/* Next button */}
+          {lightbox.images.length > 1 && (
+            <button
+              className="absolute right-4 text-white bg-white/10 hover:bg-white/20 rounded-full p-2 transition-colors z-10"
+              onClick={(e) => { e.stopPropagation(); nextImage(); }}
+              aria-label="Next"
+            >
+              <ChevronRight className="w-7 h-7" />
+            </button>
+          )}
+
+          {/* Dots */}
+          {lightbox.images.length > 1 && (
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
+              {lightbox.images.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={(e) => { e.stopPropagation(); setLightbox((lb) => lb && { ...lb, index: idx }); }}
+                  className={`w-2 h-2 rounded-full transition-colors ${idx === lightbox.index ? 'bg-white' : 'bg-white/40'}`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </>
   );
 };
